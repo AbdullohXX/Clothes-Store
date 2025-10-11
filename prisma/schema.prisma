@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  SELLER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum OnboardingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  password      String?
+  role          UserRole @default(CUSTOMER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  sellerProfile Seller?
+  addresses     Address[]
+  orders        Order[]
+  reviews       Review[]
+
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Seller {
+  id           String   @id @default(cuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String   @unique
+  storeName    String
+  slug         String   @unique
+  bio          String?
+  verified     Boolean  @default(false)
+  onboardingStatus OnboardingStatus @default(PENDING)
+  products     Product[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  payoutAccountId String?
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  seller      Seller   @relation(fields: [sellerId], references: [id])
+  sellerId    String
+  title       String
+  slug        String   @unique
+  description String
+  priceCents  Int
+  sku         String?
+  inventory   Int
+  brand       String?
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  images      ProductImage[]
+  variants    Variant[]
+  reviews     Review[]
+  orderItems  OrderItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Variant {
+  id         String @id @default(cuid())
+  product    Product @relation(fields: [productId], references: [id])
+  productId  String
+  size       String
+  color      String
+  sku        String?
+  inventory  Int
+  priceDelta Int
+}
+
+model Order {
+  id         String @id @default(cuid())
+  user       User   @relation(fields: [userId], references: [id])
+  userId     String
+  items      OrderItem[]
+  totalCents Int
+  status     OrderStatus @default(PENDING)
+  shippingAddress Address @relation(fields: [shippingAddressId], references: [id])
+  shippingAddressId String
+  paymentIntentId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  order     Order  @relation(fields: [orderId], references: [id])
+  orderId   String
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  variantId String?
+  priceCents Int
+  quantity  Int
+}
+
+model ProductImage {
+  id        String @id @default(cuid())
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  url       String
+  altText   String?
+  position  Int
+}
+
+model Category {
+  id        String @id @default(cuid())
+  name      String @unique
+  slug      String @unique
+  products  Product[]
+}
+
+model Review {
+  id        String @id @default(cuid())
+  user      User   @relation(fields: [userId], references: [id])
+  userId    String
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  rating    Int
+  title     String?
+  body      String?
+  createdAt DateTime @default(now())
+}
+
+model Address {
+  id       String @id @default(cuid())
+  user     User   @relation(fields: [userId], references: [id])
+  userId   String
+  line1    String
+  line2    String?
+  city     String
+  state    String
+  postal   String
+  country  String
+  isDefault Boolean @default(false)
+  orders   Order[]
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

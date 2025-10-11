@@ -1,0 +1,12 @@
+node_modules
+.next
+.env
+coverage
+playwright-report
+junit.xml
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp.*
+.DS_Store
