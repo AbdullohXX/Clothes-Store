@@ -1,0 +1,92 @@
+openapi: 3.0.3
+info:
+  title: Clothes E-commerce API
+  version: 0.1.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /api/products:
+    get:
+      summary: List/search products
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: size
+          schema: { type: string }
+        - in: query
+          name: color
+          schema: { type: string }
+        - in: query
+          name: minPrice
+          schema: { type: integer }
+        - in: query
+          name: maxPrice
+          schema: { type: integer }
+        - in: query
+          name: brand
+          schema: { type: string }
+        - in: query
+          name: seller
+          schema: { type: string }
+        - in: query
+          name: rating
+          schema: { type: integer }
+      responses:
+        '200':
+          description: A paginated list of products
+  /api/register:
+    post:
+      summary: Register a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+                name: { type: string }
+      responses:
+        '200': { description: User created }
+        '400': { description: Invalid input }
+  /api/checkout:
+    post:
+      summary: Create Stripe Checkout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      productId: { type: string }
+                      quantity: { type: integer }
+                successUrl: { type: string }
+                cancelUrl: { type: string }
+      responses:
+        '200': { description: Session created }
+  /api/upload/presign:
+    post:
+      summary: Create S3 presigned upload URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key: { type: string }
+                contentType: { type: string }
+      responses:
+        '200': { description: URL generated }
